@@ -16,12 +16,14 @@ WHERE CAST(t.timestamp AS DATE) = (SELECT max_date FROM latest_date)
 GROUP BY i.symbol, e.name
 ORDER BY total_oi_change DESC;
 
-
-Sample output on your data (BANKNIFTY & NIFTY dominate):
-symbol     | exchange | total_oi_change | current_oi
-BANKNIFTY  | NSE      | 234640          | 1675780
+Output
+    symbol | exchange | total_oi_change | current_open_int
 NIFTY      | NSE      | 1339200         | 19001400
-
+BANKNIFTY  | NSE      | 234640          | 1675780
+ACC        | NSE      | 63200           | 2292000
+ADANIENT   | NSE      | 24000           | 29472000
+NIFTYIT    | NSE      | 100             | 100
+BANKNIFTY  | NSE      | -80             | 51400
 
 -- 2. Volatility analysis: 7-day rolling std dev of close prices for NIFTY options
  WITH daily_avg AS (
@@ -71,6 +73,18 @@ WHERE
 GROUP BY e.name, i.symbol
 ORDER BY e.name, i.symbol;
 
+Output
+exchange | symbol    | avg_settle_price | no_of_days
+---------|-----------|------------------|-----------
+NSE      | BANKNIFTY | 28569.93         | 3
+NSE      | NIFTY     | 11061.18         | 3
+NSE      | NIFTYIT   | 15601.67         | 3
+NSE      | ACC       | 1555.17          | 3
+NSE      | ADANIENT  | 125.70           | 1
+
+Note: No MCX/GOLD in subset → only NSE shown.
+In full multi-exchange load, MCX gold rows would appear here.
+
 -- 4. Option chain summary: Grouped by expiry_dt and strike_pr, calculating implied volume
 SELECT 
     c.expiry_dt,
@@ -116,6 +130,19 @@ SELECT
     settle_pr
 FROM ranked_data
 WHERE rn = 1;
+
+Output
+symbol     | exchange | max_volume_30d | as_of_date
+-----------|----------|----------------|------------
+BANKNIFTY  | NSE      | 1225915        | 2019-08-01
+NIFTY      | NSE      | 1650955        | 2019-08-01
+ACC        | NSE      | 21692          | 2019-08-01
+ADANIENT   | NSE      | 10902          | 2019-08-01
+NIFTYIT    | NSE      | 1230           | 2019-08-01
+
+Note: Subset has only one date → max = actual volume on that day.
+In full dataset this uses 30-day window correctly.
+    
 -- 6. Bonus advanced query: Daily OI change % vs volume correlation for top symbols
 
  SELECT 
